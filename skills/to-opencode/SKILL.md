@@ -1,35 +1,22 @@
 ---
 name: to-opencode
-description: Use when the user wants to delegate work to opencode via CLI — run a prompt headless (opencode run), check which opencode models are available (opencode models), continue an opencode session, or quality-check opencode's output. Also when another skill must hand a task to opencode. Trigger words: opencode, opencode go, deepseek v4 flash, to-opencode.
+description: "Route an OpenCode request to exactly one fragment: fresh run, model catalog, session resume, QA, or visual translation."
 ---
 
 # To OpenCode
 
-opencode is a workhorse: headless, scriptable, and good at one job — taking a prompt and doing it. You coordinate; it executes.
+Route the request to one fragment:
 
-Pick the fragment that fits, then invoke it by name.
+- **`opencode-invoke`** — execute a fresh task with `opencode run` and the `build` agent.
+- **`opencode-models`** — inspect the live catalog, metadata, variants, vision, and auth readiness.
+- **`opencode-resume`** — continue the last or an exact session; fork session history when needed.
+- **`opencode-qa`** — verify the ledger, claims, file diff, tests, and limitations.
+- **`opencode-visual`** — translate a capture to text only when the chosen model lacks vision.
 
-- **`opencode-invoke`** — the workhorse. Run a prompt headless with `opencode run`. Every fresh task starts here: analysis, refactoring, edits.
-- **`opencode-models`** — the catalog. Lists everything opencode can run, grouped by provider, with exact ids. Consult before choosing a model, or any time the user asks what opencode has.
-- **`opencode-resume`** — the continuation. Picks up the last session (`-c`) or a specific one (`-s`); fork when the original must not change.
-- **`opencode-qa`** — the gate. Verifies opencode's output critically before it enters the conversation: exit status, token and cost ledger, claims check. You audit by default; cross-audit via the other agent's CLI when the user asks.
-- **`opencode-visual`** — the interpreter. opencode's workhorses can't see; when the task involves screenshots or UI, this fragment turns the capture into text the model can act on.
+## Routing invariant
 
-## The default
-
-`opencode-go/deepseek-v4-flash` — the favorite. Fast, cheap, good enough for most work.
-
-- Escalate to `opencode-go/deepseek-v4-pro` for genuinely harder problems.
-- Downgrade to `opencode/deepseek-v4-flash-free` for throwaway checks.
-
-## Prerequisite
-
-opencode must be installed. Check with `opencode --version`. Missing? Ask permission, then install:
-
-curl -fsSL https://opencode.ai/install | bash
-
-Then re-check. No opencode, no delegation — stop and tell the user.
+The selected fragment owns its prerequisite and safety checks. Do not load `opencode-invoke` and `opencode-resume` for one request; `opencode-qa` is the single terminal post-run gate. Preserve safe prompt transport, `build` for edits, and detached-worktree limits from the selected fragment.
 
 ## Completion criterion
 
-The right fragment is running, or you told the user why none fits.
+The correct fragment completed, or the user received the exact blocking prerequisite and no unsafe fallback ran.

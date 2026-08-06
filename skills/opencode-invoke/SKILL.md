@@ -1,47 +1,54 @@
 ---
 name: opencode-invoke
-description: Run opencode headless with a prompt — the workhorse fragment of the to-opencode family. Use when the user wants opencode to do analysis, refactoring, or edits, or asks to run a prompt through opencode. User-invoked.
-disable-model-invocation: true
+description: Execute a fresh OpenCode CLI build task for analysis, refactoring, commands, or file edits.
 ---
 
 # OpenCode Invoke
 
-Run opencode headless. You coordinate; it executes.
+Execute with OpenCode; keep coordination and verification in the host agent.
 
 ## Prerequisite
 
-Check `opencode --version`. Missing? Ask permission, then install:
+Resolve the executable in this order: an absolute executable `OPENCODE_BIN`, `command -v opencode`, then `$OPENCODE_INSTALL_DIR/opencode`, `$XDG_BIN_DIR/opencode`, `$HOME/bin/opencode`, and `$HOME/.opencode/bin/opencode`. Accept only an executable file, canonicalize its absolute path when supported, and verify it with `"$OPENCODE_BIN" --version`. Use that quoted path for every invocation.
 
-curl -fsSL https://opencode.ai/install | bash
-
-Re-check before continuing. No opencode, no run.
+Never search the whole filesystem or execute an unverified match. If no candidate is accessible inside the current environment, stop, link the official installation documentation, and ask the user to expose the absolute path or approve installation. A binary that exists only on an unmounted host cannot run inside a container.
 
 ## Steps
 
-1. **Ask model and variant in one question** — unless the user already specified both. Defaults: model `opencode-go/deepseek-v4-flash` (the favorite), variant `high`. Escalate to `opencode-go/deepseek-v4-pro` for hard problems; downgrade to `opencode/deepseek-v4-flash-free` for throwaway checks. Skip the question entirely when the user has no opinion — run the default.
-2. **Flag the dangerous flag.** `--auto` auto-approves permissions. Never use it without explicit permission.
-3. **Run it in the project, with its rules.** opencode works in one directory — match the host project: `--dir <host cwd>`. Project rules load automatically: `AGENTS.md` (project root or nearest parent) wins over `CLAUDE.md`; global `~/.config/opencode/AGENTS.md` over `~/.claude/CLAUDE.md`; `instructions` in `opencode.json` adds files. Context beyond the rules — tickets, architecture docs, standards — goes in the prompt with explicit paths: "Follow @docs/architecture.md, apply docs/standards.md". No `AGENTS.md` in the project and patterns matter? Offer to generate one first (`/init` inside the opencode TUI) before running.
-4. **Assemble the command:**
+1. **Reuse the local runtime.** Inherit the host process's environment, user home, OpenCode authentication, configuration, and plugins. Do not replace `HOME` or `XDG_*`, export or copy credentials, or request login before trying the existing local session.
+2. **Choose a real model.** Set `MODEL` and `PROVIDER` from the selected `provider/model` ID. If the user specified an exact ID, validate it; if it is absent, report it and stop. If no model was specified, use `opencode-go/deepseek-v4-flash`.
+3. **Verify without prompting.** Run `"$OPENCODE_BIN" models "$PROVIDER"` for the selected provider. On an authentication failure, inspect `"$OPENCODE_BIN" auth list` and tell the user to run `opencode auth login -p "$PROVIDER"`; for OpenCode Go this is `opencode auth login -p opencode-go`. If credentials exist but the model is absent, refresh once and report it. Never switch models silently.
+4. **Protect sensitive data.** Use `opencode-go/deepseek-v4-pro` or `opencode/deepseek-v4-flash-free` only when explicitly selected. Free models may retain submitted data; obtain approval before sending confidential or proprietary material. Re-check current OpenCode Go privacy terms when confidentiality matters.
+5. **Validate the variant.** Run `"$OPENCODE_BIN" models --verbose "$PROVIDER"` and inspect the selected model's `variants` object. Use `high` when present; otherwise omit `--variant`.
+6. **Select the execution location.**
+   - Edit or command task: default to a detached worktree created from the intended revision, and record its path:
 
-   opencode run -m <model> [--variant <effort>] [--dir <dir>] [-f <file>] "<prompt>" </dev/null 2>/dev/null
+     ```sh
+     RUN_PARENT="$(mktemp -d)"
+     RUN_DIR="$RUN_PARENT/worktree"
+     git worktree add --detach "$RUN_DIR" HEAD
+     ```
 
-   - `</dev/null` closes stdin. opencode reads stdin when it's a TTY; in a harness where stdin is open but not a terminal, an unclosed stdin can hang it.
-   - `2>/dev/null` keeps logs out of the conversation. Drop it (or add `--print-logs`) when debugging.
-5. **Run it. Expect streaming output, not a wall at the end.** Set a generous timeout: 600s for `high`, up to 1800s for `max` on big tasks.
-6. **Summarize the outcome** in a few lines. Then tell the user: "You can continue this opencode session later — say 'continue the opencode session'."
+   - Active worktree: use only when the user explicitly requests direct execution.
+   - If uncommitted work is required, copy only the task-relevant changes into the detached worktree. Never copy ignored secrets.
+7. **Load project context.** Point `--dir` at the chosen worktree. OpenCode loads its `AGENTS.md` or `CLAUDE.md` plus `instructions` from `opencode.json`. Put additional ticket, architecture, or standards paths in the prompt explicitly.
+8. **Use `build`.** The isolated mode still executes with `--agent build`; do not substitute `plan`.
+9. **Transport the prompt safely.** Use the host tool's argument interface, or write the exact prompt with a file-writing tool to a mode-`0600` temporary file. Never interpolate prompt text into shell syntax.
+10. **Run:**
+
+   ```sh
+   "$OPENCODE_BIN" run --agent build -m "$MODEL" --variant high \
+     --dir "$RUN_DIR" --format json < "$PROMPT_FILE"
+   ```
+
+   Omit `--variant high` when unsupported. Use `--pure` only when the user explicitly requests a plugin-free OpenCode run; it is not the default because it changes the user's local runtime. Do not discard stderr. Do not use `--auto` without explicit approval; it is not a sandbox.
+11. **Hand off once.** Return the ledger, exit status, and execution location to the host. For edits or an explicit quality request, the host runs `opencode-qa` once, inspects the isolated diff, and promotes only authorized changes. Do not re-enter `opencode-invoke` from QA.
+12. **Report** the model, variant, session ID, execution location, exit status, ledger, verification, and any unpromoted diff.
+
+## Isolation limit
+
+A detached worktree protects the active checkout from file edits. It does not isolate the host filesystem, network, processes, or credentials. Use an actual host sandbox or container when those resources must be isolated.
 
 ## Completion criterion
 
-Exit 0 and the result is summarized. Non-zero? Report the failure and ask direction — never silently retry.
-
-## Reference
-
-| Need | Flag |
-| --- | --- |
-| Model | `-m provider/model` |
-| Reasoning effort | `--variant high` |
-| Run in another directory | `--dir <dir>` |
-| Attach files | `-f <file>` |
-| Machine-readable ledger | `--format json` (NDJSON; `step_finish` carries tokens and cost) |
-| Show thinking | `--thinking` |
-| Auto-approve (dangerous) | `--auto` |
+OpenCode exited successfully and the result was handed off with evidence; for edits or an explicit quality request, QA also passed. Otherwise report the exact failure without silently retrying.

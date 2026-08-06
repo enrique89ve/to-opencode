@@ -1,0 +1,4 @@
+{"type":"step_start","sessionID":"ses_test","part":{"type":"step-start"}}
+{"type":"step_finish","sessionID":"ses_test","part":{"type":"step-finish","tokens":{"total":12,"input":8,"output":2,"reasoning":1,"cache":{"read":1,"write":0}},"cost":0.01}}
+{"type":"error","sessionID":"ses_test","error":{"name":"ExampleError"}}
+{"type":"step_finish","sessionID":"ses_test_fork","part":{"type":"step-finish","tokens":{"total":7,"input":3,"output":2,"reasoning":0,"cache":{"read":2,"write":0}},"cost":0.02}}

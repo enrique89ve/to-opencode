@@ -1,0 +1,2 @@
+# Local agent/audit state; never publish it with the skill package.
+.ai-progress/

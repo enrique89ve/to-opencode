@@ -1,30 +1,39 @@
 ---
 name: opencode-resume
-description: Continue an opencode session — the last one (-c) or a specific one (-s, --fork). Use when the user wants to keep working with an earlier opencode run, or says "continue the opencode session". Part of the to-opencode family. User-invoked.
-disable-model-invocation: true
+description: Continue or fork an existing OpenCode session by ID or last session.
 ---
 
 # OpenCode Resume
 
-Continue an opencode session. The context carries over — model, variant, history.
+Resume session context without weakening the original execution posture.
 
 ## Prerequisite
 
-Check `opencode --version`. Missing? Ask permission, then install:
+Resolve `OPENCODE_BIN` from an explicit executable, `command -v opencode`, or the official user install directories; verify it with `"$OPENCODE_BIN" --version` and quote it thereafter.
 
-curl -fsSL https://opencode.ai/install | bash
-
-Re-check before continuing.
+If no candidate is accessible inside the current environment, stop and ask the user to expose the absolute path. Do not search the whole filesystem, execute an unverified match, or install without approval.
 
 ## Steps
 
-1. **Last session or a specific one?**
-   - Last: `opencode run -c "<prompt>"`.
-   - Specific: `opencode session list` to find the id, then `opencode run -s <id> "<prompt>"`.
-2. **Fork when the original must not change:** add `--fork`. The original stays untouched; you continue a copy.
-3. **Override when needed.** Resume inherits the session's model and variant; pass `-m` or `--variant` to override. Use the same stdin/stderr hygiene as `opencode-invoke`: `</dev/null 2>/dev/null`.
-4. **Summarize the answer** in a few lines.
+1. Keep the original process environment, user home, authentication, configuration, and plugins. Do not replace `HOME`/`XDG_*` or copy credentials.
+2. Prefer an exact session ID from the prior run. Use `"$OPENCODE_BIN" session list` only when it is unknown.
+3. Recover the original `RUN_DIR`. An isolated edit session must resume in the same detached worktree; if it no longer exists, stop rather than silently using the active tree.
+4. Choose session behavior:
+   - Continue exact: `"$OPENCODE_BIN" run -s "$SESSION_ID"`.
+   - Continue last: `"$OPENCODE_BIN" run -c`.
+   - Fork history: add `--fork` to either form.
+5. Remember that `--fork` copies conversation history only. It does not isolate filesystem changes.
+6. Keep `--agent build`. The session inherits its model and variant; override them only when the user asks and the live catalog supports the override.
+7. Pass the new prompt through the execution tool's argument interface or a mode-`0600` file on stdin. Continue is the default:
+
+   ```sh
+   "$OPENCODE_BIN" run --agent build -s "$SESSION_ID" \
+     --dir "$RUN_DIR" --format json < "$PROMPT_FILE"
+   ```
+
+   Add `--fork` only when a new history is requested. Use `--pure` only when the user explicitly requests a plugin-free run. Do not discard stderr or interpolate prompt text into the shell.
+8. Hand the new session ID and evidence to the host. For edits or an explicit quality request, the host runs `opencode-qa` once; do not re-enter resume from QA.
 
 ## Completion criterion
 
-The session continued and the answer is summarized — or the session couldn't be found, and you said so.
+The intended session continued in its original execution location and returned evidence; for edits or an explicit quality request, QA also passed. Otherwise report the missing session/worktree without falling back to a less safe location.
