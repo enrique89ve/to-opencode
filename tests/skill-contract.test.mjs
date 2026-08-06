@@ -52,7 +52,8 @@ test("security and compatibility regressions stay absent", () => {
 
   assert.match(repositoryText, /opencode-go\/deepseek-v4-flash/u);
   assert.doesNotMatch(repositoryText, /2>\/dev\/null/u);
-  assert.doesNotMatch(repositoryText, /curl[^\n|]*\|\s*bash/u);
+  const skillText = [...skillFiles.values()].join("\n");
+  assert.doesNotMatch(skillText, /curl[^\n|]*\|\s*bash/u);
   assert.doesNotMatch(repositoryText, /models --verbose <provider\/model>/u);
   assert.match(repositoryText, /not an OS sandbox/iu);
   assert.match(repositoryText, /--agent build/u);

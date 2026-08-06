@@ -4,16 +4,41 @@ Beta. These skills are public on purpose — try them and tell me what breaks.
 
 Hand work to **OpenCode** from Claude Code or Codex: run prompts headless, inspect the live model catalog, resume sessions, and quality-gate the output.
 
+## Install
+
+1. Install the OpenCode CLI with the official installer:
+
+   ```sh
+   curl -fsSL https://opencode.ai/install | bash
+   ```
+
+   Review and run this command manually; the skills never execute remote installers automatically. If you prefer a package manager, use `npm install -g opencode-ai` or follow the [official installation guide](https://opencode.ai/docs/).
+
+2. Clone this repository and link the skills:
+
+   Replace `<repository-url>` with the repository's Git URL.
+
+   ```sh
+   git clone <repository-url> skill-opencode
+   cd skill-opencode
+   ln -s "$PWD/skills/"* ~/.claude/skills/
+   ln -s "$PWD/skills/"* ~/.codex/skills/
+   ```
+
+3. Optional: subscribe to OpenCode Go through this [referral link](https://opencode.ai/go?ref=7TR684F5BM), then authenticate when needed:
+
+   ```sh
+   opencode auth login -p opencode-go
+   ```
+
+   OpenCode currently lists Go at $5 for the first month, then $10/month; check the [current terms](https://opencode.ai/docs/go/) before subscribing.
+
 ## Prerequisites
 
 - An installed `opencode` CLI, either on `PATH` or exposed through an absolute `OPENCODE_BIN`.
 - An existing local OpenCode login for paid providers.
 
-If the CLI is missing, ask before installing it and use the [official installer](https://opencode.ai/docs/). Do not silently execute a remote install script.
-
-## OpenCode Go
-
-Puedes activar OpenCode Go mediante este [enlace de referido](https://opencode.ai/go?ref=7TR684F5BM). La oferta oficial indica $5 durante el primer mes y después $10/mes; revisa las [condiciones actuales](https://opencode.ai/docs/go/) antes de suscribirte.
+If the CLI is missing during a delegated run, stop and ask before installing it. Do not silently execute a remote install script.
 
 ## Executable discovery
 
@@ -81,13 +106,4 @@ The `instructions` setting in `opencode.json` can load additional standards. Put
 | `opencode-qa` | Ledger, claims, diff, and verification gate |
 | `opencode-visual` | Translate captures for models without vision |
 
-## Install
-
-Each skill is a self-contained folder. Symlink the set into the agent's skills directory:
-
-```sh
-ln -s <repo>/skills/* ~/.claude/skills/
-ln -s <repo>/skills/* ~/.codex/skills/
-```
-
-The fragments do not import each other. The router only points.
+Each skill is self-contained; the router only points to one fragment.
