@@ -26,7 +26,13 @@ Hand work to **opencode** from Claude Code or Codex: run prompts headless, brows
 | `opencode-invoke` | Fresh headless run | `opencode-invoke` |
 | `opencode-models` | Catalog of available models | `opencode-models` |
 | `opencode-resume` | Continue last or a specific session | `opencode-resume` |
-| `opencode-qa` | Quality gate on any opencode output | `opencode-qa` |
+| `opencode-qa` | Quality gate on any opencode output — you audit by default, optionally cross-audit via the other agent's CLI | `opencode-qa` |
+| `opencode-visual` | Translate visual captures into text — opencode's deepseek models have no vision | `opencode-visual` |
+
+## Two agents, one team
+
+- **Auditor.** You audit opencode's output by default. When the user asks (or the stakes are high), the *other* agent audits via its CLI — `codex exec` from Claude, `claude -p` from Codex — with permission, only if installed.
+- **Visual translator.** `opencode-go/deepseek-v4-flash` runs with `image: false` (check `opencode models --verbose <model>`). A vision-capable agent reads the capture and hands opencode a text description instead of the image.
 
 ## Install
 

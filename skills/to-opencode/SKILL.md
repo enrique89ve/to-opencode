@@ -12,7 +12,8 @@ Pick the fragment that fits, then invoke it by name.
 - **`opencode-invoke`** — the workhorse. Run a prompt headless with `opencode run`. Every fresh task starts here: analysis, refactoring, edits.
 - **`opencode-models`** — the catalog. Lists everything opencode can run, grouped by provider, with exact ids. Consult before choosing a model, or any time the user asks what opencode has.
 - **`opencode-resume`** — the continuation. Picks up the last session (`-c`) or a specific one (`-s`); fork when the original must not change.
-- **`opencode-qa`** — the gate. Verifies opencode's output critically before it enters the conversation: exit status, token and cost ledger, claims check.
+- **`opencode-qa`** — the gate. Verifies opencode's output critically before it enters the conversation: exit status, token and cost ledger, claims check. You audit by default; cross-audit via the other agent's CLI when the user asks.
+- **`opencode-visual`** — the interpreter. opencode's workhorses can't see; when the task involves screenshots or UI, this fragment turns the capture into text the model can act on.
 
 ## The default
 
