@@ -51,3 +51,17 @@ ln -s <repo>/skills/* ~/.codex/skills/
 ```
 
 The fragments are independent — no skill imports another. The router only points.
+
+## Project context
+
+opencode works in one directory — the host's project (`--dir`), not the host's conversation. Project rules load automatically, in this order:
+
+```
+AGENTS.md (project root or nearest parent) > CLAUDE.md (project)
+~/.config/opencode/AGENTS.md > ~/.claude/CLAUDE.md
+```
+
+Plus `instructions` in `opencode.json` loads extra files (CONTRIBUTING.md, standards, globs).
+
+- No `AGENTS.md` in the project? opencode runs with default rules — patterns and management directives won't apply. Generate one with `/init` inside the opencode TUI.
+- Context beyond the rules — tickets, architecture docs, standards — goes in the prompt with explicit paths: "Follow @docs/architecture.md, apply docs/standards.md".

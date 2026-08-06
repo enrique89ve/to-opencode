@@ -20,14 +20,15 @@ Re-check before continuing. No opencode, no run.
 
 1. **Ask model and variant in one question** — unless the user already specified both. Defaults: model `opencode-go/deepseek-v4-flash` (the favorite), variant `high`. Escalate to `opencode-go/deepseek-v4-pro` for hard problems; downgrade to `opencode/deepseek-v4-flash-free` for throwaway checks. Skip the question entirely when the user has no opinion — run the default.
 2. **Flag the dangerous flag.** `--auto` auto-approves permissions. Never use it without explicit permission.
-3. **Assemble the command:**
+3. **Run it in the project, with its rules.** opencode works in one directory — match the host project: `--dir <host cwd>`. Project rules load automatically: `AGENTS.md` (project root or nearest parent) wins over `CLAUDE.md`; global `~/.config/opencode/AGENTS.md` over `~/.claude/CLAUDE.md`; `instructions` in `opencode.json` adds files. Context beyond the rules — tickets, architecture docs, standards — goes in the prompt with explicit paths: "Follow @docs/architecture.md, apply docs/standards.md". No `AGENTS.md` in the project and patterns matter? Offer to generate one first (`/init` inside the opencode TUI) before running.
+4. **Assemble the command:**
 
    opencode run -m <model> [--variant <effort>] [--dir <dir>] [-f <file>] "<prompt>" </dev/null 2>/dev/null
 
    - `</dev/null` closes stdin. opencode reads stdin when it's a TTY; in a harness where stdin is open but not a terminal, an unclosed stdin can hang it.
    - `2>/dev/null` keeps logs out of the conversation. Drop it (or add `--print-logs`) when debugging.
-4. **Run it. Expect streaming output, not a wall at the end.** Set a generous timeout: 600s for `high`, up to 1800s for `max` on big tasks.
-5. **Summarize the outcome** in a few lines. Then tell the user: "You can continue this opencode session later — say 'continue the opencode session'."
+5. **Run it. Expect streaming output, not a wall at the end.** Set a generous timeout: 600s for `high`, up to 1800s for `max` on big tasks.
+6. **Summarize the outcome** in a few lines. Then tell the user: "You can continue this opencode session later — say 'continue the opencode session'."
 
 ## Completion criterion
 
